@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package light;
+
+service Light {
+  rpc Confidence(ConfidenceRequest) returns (ConfidenceReply) {}
+}
+
+// ConfidenceRequest contains the blob to check confidence (by batch and blob index) and required confidence
+message ConfidenceRequest {
+  bytes batch_header_hash = 1;
+  uint32 blob_index = 2;
+  double confidence = 3;
+}
+
+// ConfidenceReply contains the sample result, blob length and sample times
+message ConfidenceReply {
+  bool status = 1;
+  uint32 rows = 2;
+  uint32 cols = 3;
+  uint32 sampled = 4;
+}
