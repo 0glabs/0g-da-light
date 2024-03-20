@@ -4,6 +4,7 @@ package light;
 
 service Light {
   rpc Confidence(ConfidenceRequest) returns (ConfidenceReply) {}
+  rpc Retrieve(RetrieveRequest) returns (RetrieveReply) {}
 }
 
 // ConfidenceRequest contains the blob to check confidence (by batch and blob index) and required confidence
@@ -19,4 +20,14 @@ message ConfidenceReply {
   uint32 rows = 2;
   uint32 cols = 3;
   uint32 sampled = 4;
+}
+
+message RetrieveRequest {
+  bytes batch_header_hash = 1;
+  uint32 blob_index = 2;
+}
+
+message RetrieveReply {
+  bool status = 1;
+  bytes data = 2;
 }
