@@ -3,23 +3,20 @@ syntax = "proto3";
 package light;
 
 service Light {
-  rpc Confidence(ConfidenceRequest) returns (ConfidenceReply) {}
+  rpc Sample(SampleRequest) returns (SampleReply) {}
   rpc Retrieve(RetrieveRequest) returns (RetrieveReply) {}
 }
 
-// ConfidenceRequest contains the blob to check confidence (by batch and blob index) and required confidence
-message ConfidenceRequest {
+// SampleRequest contains the blob to sample (by batch and blob index) and required sample times
+message SampleRequest {
   bytes batch_header_hash = 1;
   uint32 blob_index = 2;
-  double confidence = 3;
+  uint32 times = 3;
 }
 
-// ConfidenceReply contains the sample result, blob length and sample times
-message ConfidenceReply {
-  bool status = 1;
-  uint32 rows = 2;
-  uint32 cols = 3;
-  uint32 sampled = 4;
+// SampleReply contains the sample result
+message SampleReply {
+  bool success = 1;
 }
 
 message RetrieveRequest {

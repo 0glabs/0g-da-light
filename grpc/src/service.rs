@@ -1,7 +1,7 @@
 use tonic::{Request, Response, Status};
 
 use self::light::{
-    light_server::Light, ConfidenceReply, ConfidenceRequest, RetrieveReply, RetrieveRequest,
+    light_server::Light, RetrieveReply, RetrieveRequest, SampleReply, SampleRequest,
 };
 
 pub mod light {
@@ -18,10 +18,10 @@ impl LightService {
 
 #[tonic::async_trait]
 impl Light for LightService {
-    async fn confidence(
+    async fn sample(
         &self,
-        request: Request<ConfidenceRequest>,
-    ) -> Result<Response<ConfidenceReply>, Status> {
+        request: Request<SampleRequest>,
+    ) -> Result<Response<SampleReply>, Status> {
         todo!()
     }
 
