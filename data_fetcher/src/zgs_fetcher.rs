@@ -112,7 +112,7 @@ async fn download_with_proof(
                     return;
                 }
 
-                if let Err(_) = segment.validate(ENTRIES_PER_SEGMENT) {
+                if segment.validate(ENTRIES_PER_SEGMENT).is_err() {
                     if let Err(e) = sender.send((task_index, None)) {
                         error!("send error: {:?}", e);
                     }

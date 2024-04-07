@@ -5,7 +5,7 @@ use jsonrpsee::http_client::HttpClient;
 use kv_rpc::KeyValueRpcClient;
 use zgs_rpc::types::Segment;
 
-const MAX_QUERY_SIZE: u64 = 4 * 1024 * 1024; // 4 MB
+const MAX_QUERY_SIZE: u64 = 256 * 1024; // 256 KB
 
 pub async fn fetch_kv_batch_info(
     client: HttpClient,

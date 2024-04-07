@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // sampler
 
     let sampler = Sampler::new(
-        &node_config
+        node_config
             .settings
             .get_array("zgs_urls")?
             .iter()

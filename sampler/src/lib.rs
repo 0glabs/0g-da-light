@@ -37,22 +37,25 @@ pub fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<Pos
     let mut indices = HashSet::new();
     while (indices.len() as u16) < count as u16 {
         let col = rng.gen_range(0..dimensions.cols().into());
-        let row = rng.gen_range(0..dimensions.extended_rows());
-        indices.insert(Position { row, col });
+        let row = rng.gen_range(0..dimensions.rows().into());
+        indices.insert(Position {
+            row: row.into(),
+            col,
+        });
     }
 
     indices.into_iter().collect::<Vec<_>>()
 }
 
 impl Sampler {
-    pub fn new(zgs_urls: &Vec<String>, kv_url: &String, stream_id: H256) -> Result<Self> {
+    pub fn new(zgs_urls: Vec<String>, kv_url: &String, stream_id: H256) -> Result<Self> {
         Ok(Self {
             zgs_clients: zgs_urls
                 .iter()
                 .map(build_client)
                 .collect::<Result<Vec<HttpClient>, Box<dyn Error>>>()
                 .map_err(|e| anyhow!(e.to_string()))?,
-            kv_client: build_client(&kv_url).map_err(|e| anyhow!(e.to_string()))?,
+            kv_client: build_client(kv_url).map_err(|e| anyhow!(e.to_string()))?,
             stream_id,
         })
     }
@@ -75,7 +78,7 @@ impl Sampler {
                 );
                 return Ok(false);
             };
-            let data_root = H256::from_slice(&batch_info.batch_header.data_root);
+            let data_root = batch_info.batch_header.data_root;
             let blob_locations = allocate_rows(&batch_info.blob_disperse_infos);
             let positions = generate_random_cells(dimensions, times);
             match self
@@ -117,18 +120,16 @@ impl Sampler {
         let row_byte_size = dimensions.row_byte_size();
         let segments =
             download_segments(self.zgs_clients.clone(), data_root, segment_indexes).await?;
-        let rows = u16::from(dimensions.cols()) as usize;
         let cols = u16::from(dimensions.cols()) as usize;
         let pp = Arc::new(kate_recovery::couscous::public_params());
         for ((segment, offset), position) in
             segments.iter().zip(offsets.iter()).zip(positions.iter())
         {
             // generate 1-row matrix
-            let evals = EvaluationGrid::from_data(
-                segment[*offset..*offset + row_byte_size].to_vec(),
-                rows,
-                cols,
+            let evals = EvaluationGrid::from_row_slices(
                 1,
+                cols,
+                segment[*offset..*offset + row_byte_size].to_vec(),
             )
             .map_err(|e| anyhow!(format!("Grid construction failed: {:?}", e)))?;
             // make polynomial
@@ -136,9 +137,7 @@ impl Sampler {
                 .make_polynomial_grid()
                 .map_err(|e| anyhow!(format!("Make polynomial grid failed: {:?}", e)))?;
 
-            let Some(data) =
-                evals.get::<usize, usize>(position.row as usize, position.col as usize)
-            else {
+            let Some(data) = evals.get::<usize, usize>(0, position.col as usize) else {
                 bail!(anyhow!(
                     "Invalid position {:?} for dims {:?}",
                     position,
@@ -148,7 +147,7 @@ impl Sampler {
             let proof = match polys.proof(
                 &kate::couscous::multiproof_params(),
                 &kate::com::Cell {
-                    row: zerog_core::BlockLengthRows(1),
+                    row: zerog_core::BlockLengthRows(0),
                     col: zerog_core::BlockLengthColumns(position.col.into()),
                 },
             ) {
@@ -160,13 +159,16 @@ impl Sampler {
             let proof = proof.to_bytes().expect("Ser cannot fail").to_vec();
             let content = [proof, data].into_iter().flatten().collect::<Vec<_>>();
             let cell = Cell {
-                position: position.clone(),
+                position: Position {
+                    row: 0,
+                    col: position.col,
+                },
                 content: content.as_slice().try_into()?,
             };
             let commitment: &[u8; 48] = segment
                 [*offset + row_byte_size..*offset + row_byte_size + COMMITMENT_SIZE as usize]
                 .try_into()?;
-            if !proof::verify(&pp, dimensions.clone(), &commitment, &cell)? {
+            if !proof::verify(&pp, dimensions, commitment, &cell)? {
                 return Ok(false);
             }
         }
