@@ -21,7 +21,6 @@ pub struct Sampler {
     zgs_clients: Vec<HttpClient>,
     // kv settings
     kv_client: HttpClient,
-    stream_id: H256,
 }
 
 /// Generates random cell positions for sampling
@@ -48,7 +47,7 @@ pub fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<Pos
 }
 
 impl Sampler {
-    pub fn new(zgs_urls: Vec<String>, kv_url: &String, stream_id: H256) -> Result<Self> {
+    pub fn new(zgs_urls: Vec<String>, kv_url: &String) -> Result<Self> {
         Ok(Self {
             zgs_clients: zgs_urls
                 .iter()
@@ -56,18 +55,18 @@ impl Sampler {
                 .collect::<Result<Vec<HttpClient>, Box<dyn Error>>>()
                 .map_err(|e| anyhow!(e.to_string()))?,
             kv_client: build_client(kv_url).map_err(|e| anyhow!(e.to_string()))?,
-            stream_id,
         })
     }
 
     pub async fn sample(
         &self,
+        stream_id: H256,
         batch_header_hash: Vec<u8>,
         blob_index: u32,
         times: u32,
     ) -> Result<bool> {
         if let Some(batch_info) =
-            fetch_kv_batch_info(self.kv_client.clone(), self.stream_id, batch_header_hash).await?
+            fetch_kv_batch_info(self.kv_client.clone(), stream_id, batch_header_hash).await?
         {
             let rows = batch_info.blob_disperse_infos[blob_index as usize].rows;
             let cols = batch_info.blob_disperse_infos[blob_index as usize].cols;

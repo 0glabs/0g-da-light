@@ -5,7 +5,6 @@ use std::{error::Error, net::SocketAddr, str::FromStr};
 
 use anyhow::{anyhow, bail, Result};
 use config::Config;
-use ethereum_types::H256;
 use grpc::run_server;
 use sampler::Sampler;
 use tokio::signal;
@@ -62,7 +61,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .map(|x| x.to_string())
             .collect(),
         &node_config.settings.get_string("kv_url")?,
-        H256::from_str(&node_config.settings.get_string("stream_id")?)?,
     )?;
 
     // start server

@@ -1,3 +1,4 @@
+use ethereum_types::H256;
 use sampler::Sampler;
 use tonic::{Code, Request, Response, Status};
 
@@ -37,6 +38,7 @@ impl Light for LightService {
         match self
             .sampler
             .sample(
+                H256::from_slice(&request_content.stream_id),
                 request_content.batch_header_hash,
                 request_content.blob_index,
                 request_content.times,
