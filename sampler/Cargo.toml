@@ -1,0 +1,22 @@
+[package]
+name = "sampler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zgs_rpc = { git = "https://github.com/0glabs/0g-storage-node.git", branch = "main", package = "rpc" }
+kv_rpc = { git = "https://github.com/0glabs/0g-storage-kv.git", branch = "main", package = "rpc" }
+jsonrpsee = { version = "0.14.0", features = ["full"] }
+anyhow = { version = "1.0.58", features = ["backtrace"] }
+ethereum-types = "0.14"
+serde = { version = "1.0.137", features = ["derive"] }
+base64 = "0.13.0"
+data_fetcher = { path = "../data_fetcher" }
+common = { path = "../common" }
+zerog-core = { git = "https://github.com/0glabs/0g-da-encoder.git", branch = "main" }
+kate = { git = "https://github.com/0glabs/0g-da-encoder.git", branch = "main" }
+kate-recovery = { git = "https://github.com/0glabs/0g-da-encoder.git", branch = "main" }
+tracing = "0.1.40"
+rand = "0.8.4"

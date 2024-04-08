@@ -1,0 +1,15 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zgs_rpc = { git = "https://github.com/0glabs/0g-storage-node.git", branch = "main", package = "rpc" }
+kv_rpc = { git = "https://github.com/0glabs/0g-storage-kv.git", branch = "main", package = "rpc" }
+jsonrpsee = { version = "0.14.0", features = ["full"] }
+anyhow = { version = "1.0.58", features = ["backtrace"] }
+ethereum-types = "0.14"
+serde = { version = "1.0.137", features = ["derive"] }
+base64 = "0.13.0"

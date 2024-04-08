@@ -1,0 +1,8 @@
+log_level = "debug"
+
+zgs_urls = ["http://127.0.0.1:5678"]
+kv_url = "http://127.0.0.1:7890"
+
+grpc_listen_address = "0.0.0.0:32011"
+
+
