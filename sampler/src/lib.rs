@@ -75,6 +75,10 @@ impl Sampler {
             );
             timer = std::time::Instant::now();
 
+            if batch_info.blob_disperse_infos.len() <= blob_index as usize {
+                bail!(anyhow!("invalid blob index"));
+            }
+
             let rows = batch_info.blob_disperse_infos[blob_index as usize].rows;
             let cols = batch_info.blob_disperse_infos[blob_index as usize].cols;
             let Some(dimensions) = Dimensions::new(rows as u16, cols as u16) else {
@@ -104,16 +108,15 @@ impl Sampler {
                 )
                 .await
             {
-                Ok(success) => {
-                    return Ok(success);
-                }
+                Ok(success) => Ok(success),
                 Err(e) => {
                     debug!("sample failed with error {:?}", e.to_string());
-                    return Ok(false);
+                    Ok(false)
                 }
             }
+        } else {
+            bail!(anyhow!("batch not found"));
         }
-        Ok(false)
     }
 
     pub async fn verify_cells(
