@@ -65,9 +65,16 @@ impl Sampler {
         blob_index: u32,
         times: u32,
     ) -> Result<bool> {
+        let mut timer = std::time::Instant::now();
         if let Some(batch_info) =
             fetch_kv_batch_info(self.kv_client.clone(), stream_id, batch_header_hash).await?
         {
+            info!(
+                "fetch kv batch info used {:?}ms",
+                timer.elapsed().as_millis()
+            );
+            timer = std::time::Instant::now();
+
             let rows = batch_info.blob_disperse_infos[blob_index as usize].rows;
             let cols = batch_info.blob_disperse_infos[blob_index as usize].cols;
             let Some(dimensions) = Dimensions::new(rows as u16, cols as u16) else {
@@ -80,6 +87,14 @@ impl Sampler {
             let data_root = batch_info.batch_header.data_root;
             let blob_locations = allocate_rows(&batch_info.blob_disperse_infos);
             let positions = generate_random_cells(dimensions, times);
+
+            info!(
+                "generate sample positions used {:?}ms, matrix {:?}x{:?}",
+                timer.elapsed().as_millis(),
+                rows,
+                cols
+            );
+
             match self
                 .verify_cells(
                     dimensions,
@@ -108,6 +123,8 @@ impl Sampler {
         data_root: H256,
         positions: Vec<Position>,
     ) -> Result<bool> {
+        let mut timer = std::time::Instant::now();
+
         let segment_indexes = positions
             .iter()
             .map(|x| location.segment_indexes[x.row as usize] as usize)
@@ -119,11 +136,15 @@ impl Sampler {
         let row_byte_size = dimensions.row_byte_size();
         let segments =
             download_segments(self.zgs_clients.clone(), data_root, segment_indexes).await?;
+
+        info!("download segments used {:?}ms", timer.elapsed().as_millis());
+
         let cols = u16::from(dimensions.cols()) as usize;
         let pp = Arc::new(kate_recovery::couscous::public_params());
         for ((segment, offset), position) in
             segments.iter().zip(offsets.iter()).zip(positions.iter())
         {
+            timer = std::time::Instant::now();
             // generate 1-row matrix
             let evals = EvaluationGrid::from_row_slices(
                 1,
@@ -167,7 +188,13 @@ impl Sampler {
             let commitment: &[u8; 48] = segment
                 [*offset + row_byte_size..*offset + row_byte_size + COMMITMENT_SIZE as usize]
                 .try_into()?;
-            if !proof::verify(&pp, dimensions, commitment, &cell)? {
+            info!("generate proof used {:?}ms", timer.elapsed().as_millis());
+            timer = std::time::Instant::now();
+
+            let verification_success = proof::verify(&pp, dimensions, commitment, &cell)?;
+            info!("verification used {:?}ms", timer.elapsed().as_millis());
+
+            if !verification_success {
                 return Ok(false);
             }
         }
